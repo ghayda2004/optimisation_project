@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+requests
+python-telegram-bot
+streamlit
+folium
+ortools
+python-dotenv
+openrouteservice
+pandas
+Flask
+Flask-SQLAlchemy
+psycopg2-binary
+flask-cors
+sqlalchemy
+numpy
