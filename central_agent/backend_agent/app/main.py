@@ -1,8 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api import admin_api, driver_api
-from .core.database import engine, Base
+from app.api import admin_api, driver_api
+from app.core.database import engine
+from app.models.models import Base
 
 # Création des tables dans la base de données si elles n'existent pas
 # Note: Dans un environnement de production, on utiliserait plutôt Alembic.
