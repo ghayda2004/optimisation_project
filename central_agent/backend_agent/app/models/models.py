@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, Index
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, Index, BigInteger
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import func
 
@@ -7,7 +7,7 @@ Base = declarative_base()
 class Order(Base):
     __tablename__ = 'orders'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     reference = Column(String(100))
     expediteur = Column(String(200))
     adresse_destinataire = Column(String(500))
@@ -69,7 +69,7 @@ class RouteStop(Base):
     
     id = Column(Integer, primary_key=True)
     route_id = Column(Integer, ForeignKey('routes.id'), nullable=False, index=True)
-    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
+    order_id = Column(BigInteger, ForeignKey('orders.id'), nullable=False)
     stop_sequence = Column(Integer, nullable=False)
     arrived_at = Column(DateTime(timezone=True), nullable=True)
     

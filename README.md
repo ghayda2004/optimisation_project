@@ -8,8 +8,9 @@
 
 - **Intelligent Route Optimization**: Uses Google OR-Tools to compute optimal routes considering distance, capacity, and time constraints
 - **Real-time Profitability Analysis**: Calculates net profit per route accounting for fuel, labor, and handling costs
+- **Dynamic Order Allocation**: Assign new orders at runtime with marginal cost analysis and admin approval workflow
 - **Data Pipeline**: ETL workflows to import orders/drivers, geocode addresses, and manage data quality
-- **RESTful APIs**: Admin and Driver interfaces for route management and performance tracking
+- **RESTful APIs**: Admin and Driver interfaces for route management, performance tracking, and real-time order assignment
 - **Visual Route Planning**: Generates interactive HTML maps with Leaflet.js for each driver's route
 - **PostgreSQL Backend**: Persistent storage for orders, drivers, routes, and profitability metrics
 
@@ -368,6 +369,121 @@ GET /api/admin/routes
 
 ---
 
+### Admin Dynamic Order Allocation API (`/api/admin`)
+
+#### 3. Propose New Order (Get Suitable Drivers)
+```
+POST /api/admin/propose-order
+```
+
+**Query Parameters:**
+- `reference`: Order reference code (string)
+- `customer_name`: Customer name (string)
+- `address`: Delivery address (string)
+- `lat`: Latitude (float)
+- `lng`: Longitude (float)
+- `delivery_value`: Delivery payment value (float, in TND)
+
+**Response Example:**
+```json
+{
+  "order": {
+    "reference": "CMD-2024-0101",
+    "customer": "Sophia Store",
+    "address": "Rue de la Paix 123, Tunis",
+    "lat": 36.8065,
+    "lng": 10.1957,
+    "value": 8.00
+  },
+  "feasible_drivers": [
+    {
+      "driver_id": 1,
+      "driver_name": "Livreur Ahmad",
+      "is_feasible": true,
+      "marginal_profit": 4.85,
+      "distance_added_km": 12.5,
+      "marginal_cost": 3.15,
+      "fuel_cost": 4.44,
+      "labor_cost": 1.04,
+      "handling_cost": 0.0,
+      "best_position": 3,
+      "current_distance_km": 42.0,
+      "new_distance_km": 54.5,
+      "current_stops": 8,
+      "new_stops": 9
+    }
+  ],
+  "infeasible_drivers": [
+    {
+      "driver_id": 2,
+      "driver_name": "Livreur Karim",
+      "is_feasible": false,
+      "distance_added_km": 18.5
+    }
+  ],
+  "best_driver_id": 1,
+  "best_driver_name": "Livreur Ahmad",
+  "status": "ready_for_confirmation"
+}
+```
+
+**Description:**
+- Calculates marginal cost for inserting the order into each active driver's route
+- Returns drivers sorted by profit (highest first, marked as "best")
+- `marginal_profit`: Net profit added by including this order in the route
+- `is_feasible`: Whether adding this order respects route constraints (150km max distance, 8-hour max time)
+- `best_position`: Optimal insertion position in the delivery sequence
+- Admin sees all options and can confirm with best driver or choose alternative
+
+---
+
+#### 4. Confirm Order Assignment (Assign to Chosen Driver)
+```
+POST /api/admin/confirm-order
+```
+
+**Query Parameters:**
+- `reference`: Order reference code (string)
+- `customer_name`: Customer name (string)
+- `address`: Delivery address (string)
+- `lat`: Latitude (float)
+- `lng`: Longitude (float)
+- `delivery_value`: Delivery payment value (float, in TND)
+- `driver_id`: Selected driver ID (integer)
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Order assigned to Livreur Ahmad",
+  "order": {
+    "id": 12345,
+    "reference": "CMD-2024-0101",
+    "status": "assigned"
+  },
+  "route": {
+    "route_id": 5,
+    "driver_name": "Livreur Ahmad",
+    "total_distance_km": 54.5,
+    "total_duration_min": 220,
+    "num_stops": 9,
+    "total_revenue": 156.00,
+    "net_profit": 89.15,
+    "margin_pct": 21.3
+  }
+}
+```
+
+**Description:**
+- Executes the order assignment to the chosen driver
+- Creates order in database with status `"assigned"`
+- Inserts order as RouteStop in driver's current route at optimal position
+- Recalculates route metrics (distance, duration, profitability)
+- Returns updated route information showing new totals
+- Next step for driver: Route appears on mobile app with new stop in sequence
+
+---
+
 ### Driver Mobile API (`/api/driver`)
 
 #### 1. Get Current Route for Driver
@@ -442,15 +558,15 @@ GET /api/driver/{driver_id}/stats
 The system follows this end-to-end workflow:
 
 ```
-1. DATA PREPARATION
+1. DATA PREPARATION (Batch)
    ├─ CSV Import (orders, drivers)
    ├─ Data Cleaning (handle nulls, format coordinates)
    └─ Geocoding (convert addresses to lat/lng)
               ↓
-2. ROUTE OPTIMIZATION
+2. ROUTE OPTIMIZATION (Batch)
    ├─ Distance Matrix (Haversine formula)
    ├─ OR-Tools VRP Solver
-   │  ├─ Constraints: capacity, distance, time
+   │  ├─ Constraints: capacity, distance, time (24h max per percel)
    │  ├─ Minimize: total distance & time
    │  └─ Output: optimized routes
    └─ Route Sequencing (assign stops in order)
@@ -480,6 +596,15 @@ The system follows this end-to-end workflow:
    ├─ Admin queries KPIs & routes
    ├─ Drivers fetch current route & navigation
    └─ Frontend renders dashboards
+              ↓
+7. DYNAMIC ORDER ALLOCATION (Real-time)
+   ├─ Admin adds new order
+   ├─ System proposes suitable drivers (marginal cost calculation)
+   ├─ Display feasible drivers ranked by profit
+   ├─ Admin confirms assignment
+   ├─ Order inserted at optimal position in chosen route
+   ├─ Route metrics recalculated
+   └─ Driver sees new stop on mobile app immediately
 ```
 
 ---
@@ -589,7 +714,61 @@ For each route:
 
 ---
 
-### 5. **map_generator.py** — Map Visualization
+### 5. **dynamic_allocation.py** — Real-time Order Assignment
+**Responsibility:** Calculate marginal cost and assign new orders to best driver at runtime
+
+**Key Constraints:**
+- Distance: Max 150 km per vehicle (must not be exceeded)
+- Time: Max 8 hours per vehicle
+- Feasibility: Driver must have capacity for new order
+
+**Key Functions:**
+- `haversine_distance()`: Calculate distance between two points (lat/lng)
+- `find_optimal_insertion_position()`: Determine best place to insert order in route sequence
+  - Returns position and distance added
+- `calculate_marginal_cost_per_driver()`: Evaluate cost/profit for each active driver
+  - Returns sorted list: [{driver_id, driver_name, marginal_profit, is_feasible, best_position, cost_breakdown, ...}]
+  - Highest profit driver first (suitable for admin decision)
+- `assign_order_to_driver()`: Execute the assignment
+  - Creates order in database
+  - Adds RouteStop to driver's route
+  - Updates route metrics and profitability
+  - Returns success status
+
+**Marginal Cost Calculation:**
+```
+Marginal Profit = Delivery Value - (New Fuel Cost + New Labor Cost)
+Where:
+  New Fuel Cost = distance_added × fuel_rate
+  New Labor Cost = duration_added × hourly_rate
+  
+Positive marginal profit = order worth adding
+Negative = unprofitable but feasible
+Infeasible = exceeds distance/time constraints
+```
+
+**Output Structure:**
+```json
+{
+  "driver_id": 1,
+  "driver_name": "Livreur Ahmad",
+  "marginal_profit": 4.85,
+  "is_feasible": true,
+  "best_position": 3,
+  "distance_added_km": 12.5,
+  "fuel_cost": 4.44,
+  "labor_cost": 1.04,
+  "handling_cost": 0.0,
+  "current_distance_km": 42.0,
+  "new_distance_km": 54.5,
+  "current_stops": 8,
+  "new_stops": 9
+}
+```
+
+---
+
+### 6. **map_generator.py** — Map Visualization
 **Responsibility:** Generate interactive HTML maps with route visualization
 
 **Features:**
@@ -665,10 +844,18 @@ The project includes two frontend dashboards in `central_agent/backend_agent/fro
 
 ### **Admin Dashboard** (`admin/index.html`)
 Features for fleet managers:
-- KPI summary (active drivers, total routes, profit)
-- Route list with profitability
-- Map viewer for each route
-- Download optimization reports
+- **KPI summary** (active drivers, total routes, profit)
+- **Route list** with profitability metrics
+- **Map viewer** for each route with stop details
+- **Download optimization reports**
+- **🆕 Ajouter Colis (Add Order)** section:
+  - Form to enter new order details (reference, customer, address, coordinates, value)
+  - "Voir Chauffeurs Adaptés" button triggers marginal cost calculation
+  - Modal displays all suitable drivers ranked by profit
+  - ⭐ Best driver auto-selected (highest marginal profit)
+  - Admin can click alternative driver to select different one
+  - "Confirmer Attribution" button executes assignment
+  - Success confirmation shows updated route metrics
 
 ### **Driver App** (`driver/index.html`)
 Mobile-friendly interface for drivers:
@@ -677,6 +864,7 @@ Mobile-friendly interface for drivers:
 - Google Maps navigation URLs
 - Personal statistics & earnings
 - Performance history
+- Real-time updates when new orders assigned (driver route refreshes with new stops)
 
 *Note: These are HTML templates; they need to be served by the FastAPI backend or accessed locally.*
 
@@ -756,6 +944,48 @@ curl http://127.0.0.1:8000/api/driver/$driverId/stats
 
 ---
 
+### Workflow 4: Dynamic Order Assignment (Real-time)
+
+```bash
+# 1. Admin opens dashboard at http://127.0.0.1:8000/frontend/add/admin/index.html
+# 2. Clicks "Ajouter Colis" in sidebar
+# 3. Fills order form:
+#    - Reference: CMD-2024-0101
+#    - Customer: Sophia Store
+#    - Address: Rue de la Paix 123, Tunis
+#    - Lat/Lng: 36.8065, 10.1957
+#    - Value: 8.00 DT
+# 4. Clicks "Voir Chauffeurs Adaptés"
+#    → System calls POST /api/admin/propose-order
+#    → Returns sorted driver list with marginal profit breakdown
+# 5. Admin sees modal with feasible/infeasible drivers
+#    → Best driver (⭐) auto-selected
+#    → Can click alternative driver if desired
+# 6. Clicks "Confirmer Attribution"
+#    → System calls POST /api/admin/confirm-order
+#    → Order created and inserted at optimal route position
+#    → Route metrics recalculated
+# 7. Success notification shows new route info
+# 8. Driver app auto-refreshes and shows new stop in sequence
+```
+
+**Cost Calculation Breakdown:**
+- Admin sees for each driver:
+  - ✅ **Marginal Profit**: +4.85 DT (order is worth adding)
+  - 📍 **Distance Added**: 12.5 km
+  - ⛽ **Fuel Cost**: 4.44 DT (distance × 0.356 TND/km)
+  - 👤 **Labor Cost**: 1.04 DT (time × 5 TND/hour)
+  - 📦 **Handling**: 0 DT
+  - ✗ **Infeasible**: Drivers exceeding 150km limit shown as unavailable
+
+**Result:**
+- Order assigned to most profitable driver
+- Route automatically resequenced
+- Driver sees updated route on mobile
+- Admin dashboard shows new order in "Voir Routes"
+
+---
+
 ## 🔍 Troubleshooting
 
 | Issue | Cause | Solution |
@@ -792,9 +1022,12 @@ The system tracks and calculates:
 | Main API | `central_agent/backend_agent/app/main.py` |
 | Admin endpoints | `central_agent/backend_agent/app/api/admin_api.py` |
 | Driver endpoints | `central_agent/backend_agent/app/api/driver_api.py` |
+| Dynamic allocation | `central_agent/backend_agent/app/services/dynamic_allocation.py` |
 | Database models | `central_agent/backend_agent/app/models/models.py` |
 | Route optimizer | `central_agent/backend_agent/app/services/routing.py` |
 | Profit calculator | `central_agent/backend_agent/app/services/profitability.py` |
+| Admin dashboard | `central_agent/backend_agent/frontend/add/admin/index.html` |
+| Driver app | `central_agent/backend_agent/frontend/add/driver/index.html` |
 | Main pipeline | `central_agent/scripts/pipeline.py` |
 | Sample data | `central_agent/backend_agent/app/core/data/` |
 | Generated maps | `central_agent/backend_agent/outputs/` |

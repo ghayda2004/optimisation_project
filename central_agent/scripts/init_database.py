@@ -39,6 +39,10 @@ def init_database():
             # On importe 'Base' en utilisant le chemin relatif à backend_agent
             from app.models.models import Base
             
+            print("⏳ Suppression des tables existantes...")
+            Base.metadata.drop_all(engine)
+            print("✅ Tables supprimées")
+            
             print("⏳ Création des tables en cours...")
             Base.metadata.create_all(engine)
             print("✅ Tables créées avec succès")

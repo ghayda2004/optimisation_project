@@ -1,0 +1,69 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Route Chauffeur Livreur Yessin</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { margin: 0; padding: 0; font-family: sans-serif; }
+            #header { 
+                background: #2d6a4f; color: white; padding: 15px; 
+                display: flex; justify-content: space-between; align-items: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; z-index: 1000;
+            }
+            #map { height: calc(100vh - 70px); width: 100vw; }
+            .stats { font-weight: bold; font-size: 0.9em; }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div><b>Chauffeur:</b> Livreur Yessin</div>
+            <div class="stats">
+                📦 25 colis | 
+                📍 104.44 km | 
+                💰 Gain: 100.9 DT
+            </div>
+        </div>
+        <div id="map"></div>
+
+        <script>
+            var map = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            var stops = [
+                { "lat": 36.806, "lng": 10.181, "info": "DÉPÔT (Départ)", "color": "blue" },
+                { "lat": 36.7894184, "lng": 10.1726889, "info": "Arrêt 1: Boutique_C<br>lycée abou kacem chebbi", "color": "green" }, { "lat": 36.78, "lng": 10.17, "info": "Arrêt 2: Boutique_A<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.77, "lng": 10.18, "info": "Arrêt 3: Boutique_A<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.71009442156114, "lng": 10.187665025735477, "info": "Arrêt 4: Boutique_C<br>Zone zahrouni", "color": "green" }, { "lat": 36.69853002528086, "lng": 10.248855276393057, "info": "Arrêt 5: Boutique_C<br>Zone Kram", "color": "green" }, { "lat": 36.69787706280917, "lng": 10.299370075187936, "info": "Arrêt 6: Boutique_A<br>Zone ezzahra", "color": "green" }, { "lat": 36.72393219161856, "lng": 10.315360484226224, "info": "Arrêt 7: Boutique_B<br>Zone ezzahra", "color": "green" }, { "lat": 36.67620158257303, "lng": 10.351971160849232, "info": "Arrêt 8: Boutique_C<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.67326660158319, "lng": 10.395448725187949, "info": "Arrêt 9: Boutique_B<br>Zone Kram", "color": "green" }, { "lat": 36.65205442935984, "lng": 10.399092473308029, "info": "Arrêt 10: Boutique_C<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.66026213054205, "lng": 10.292591562563905, "info": "Arrêt 11: Boutique_A<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.54348601624928, "lng": 10.191773802229878, "info": "Arrêt 12: Boutique_C<br>Zone rue ichbilia", "color": "green" }, { "lat": 36.62541696451701, "lng": 10.10604904440124, "info": "Arrêt 13: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.630959670383966, "lng": 10.0795068318421, "info": "Arrêt 14: Boutique_A<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.66236058879193, "lng": 10.09334818416276, "info": "Arrêt 15: Boutique_B<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.69405351941644, "lng": 10.121403347998315, "info": "Arrêt 16: Boutique_C<br>Zone Jeanne d'arc", "color": "green" }, { "lat": 36.713887514545256, "lng": 10.100909039058994, "info": "Arrêt 17: Boutique_A<br>Zone ezzahra", "color": "green" }, { "lat": 36.74, "lng": 10.12, "info": "Arrêt 18: Boutique_B<br>Zone rue ichbilia", "color": "green" }, { "lat": 36.75, "lng": 10.13, "info": "Arrêt 19: Boutique_C<br>Zone rue ichbilia", "color": "green" }, { "lat": 36.76, "lng": 10.11, "info": "Arrêt 20: Boutique_A<br>Zone rue ichbilia", "color": "green" }, { "lat": 36.76413, "lng": 10.1127187, "info": "Arrêt 21: Boutique_A<br>rue ichbilia", "color": "green" }, { "lat": 36.7686795, "lng": 10.1135873, "info": "Arrêt 22: Boutique_B<br>Sidi bousaid", "color": "green" }, { "lat": 36.79, "lng": 10.12, "info": "Arrêt 23: Boutique_B<br>Zone zahrouni", "color": "green" }, { "lat": 36.79935860297934, "lng": 10.120430277731616, "info": "Arrêt 24: Boutique_A<br>Zone 16 rue 8205 hay khadra", "color": "green" }, { "lat": 36.79917937424554, "lng": 10.129838611755371, "info": "Arrêt 25: Boutique_C<br>Zone jardins d'el menzah 1", "color": "green" }
+            ];
+
+            var bounds = [];
+
+            // Ajouter les marqueurs
+            stops.forEach(function(s, index) {
+                var marker = L.marker([s.lat, s.lng]).addTo(map);
+                marker.bindPopup(s.info);
+                bounds.push([s.lat, s.lng]);
+            });
+
+            // Tracer la route via OSRM
+            var osrmUrl = "https://router.project-osrm.org/route/v1/driving/10.181,36.806;10.1726889,36.7894184;10.17,36.78;10.18,36.77;10.187665025735477,36.71009442156114;10.248855276393057,36.69853002528086;10.299370075187936,36.69787706280917;10.315360484226224,36.72393219161856;10.351971160849232,36.67620158257303;10.395448725187949,36.67326660158319;10.399092473308029,36.65205442935984;10.292591562563905,36.66026213054205;10.191773802229878,36.54348601624928;10.10604904440124,36.62541696451701;10.0795068318421,36.630959670383966;10.09334818416276,36.66236058879193;10.121403347998315,36.69405351941644;10.100909039058994,36.713887514545256;10.12,36.74;10.13,36.75;10.11,36.76;10.1127187,36.76413;10.1135873,36.7686795;10.12,36.79;10.120430277731616,36.79935860297934;10.129838611755371,36.79917937424554?overview=full&geometries=geojson";
+            
+            fetch(osrmUrl)
+                .then(response => response.json())
+                .then(data => {
+                    var route = data.routes[0].geometry;
+                    L.geoJSON(route, {
+                        style: { color: '#2d6a4f', weight: 6, opacity: 0.7 }
+                    }).addTo(map);
+                    
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                });
+        </script>
+    </body>
+    </html>
+    

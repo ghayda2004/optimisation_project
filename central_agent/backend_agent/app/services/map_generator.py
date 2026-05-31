@@ -53,7 +53,7 @@ def generate_map_html(route_data, output_dir="outputs"):
         <script>
             var map = L.map('map');
 
-            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}.png', {{
+            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
                 attribution: '© OpenStreetMap contributors'
             }}).addTo(map);
 
@@ -65,11 +65,11 @@ def generate_map_html(route_data, output_dir="outputs"):
             var bounds = [];
 
             // Ajouter les marqueurs
-            stops.forEach(function(s, index) {{(
+            stops.forEach(function(s, index) {{
                 var marker = L.marker([s.lat, s.lng]).addTo(map);
                 marker.bindPopup(s.info);
                 bounds.push([s.lat, s.lng]);
-            )}});
+            }});
 
             // Tracer la route via OSRM
             var osrmUrl = "https://router.project-osrm.org/route/v1/driving/{osrm_coords}?overview=full&geometries=geojson";

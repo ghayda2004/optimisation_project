@@ -1,0 +1,69 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Route Chauffeur Livreur Salah</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { margin: 0; padding: 0; font-family: sans-serif; }
+            #header { 
+                background: #2d6a4f; color: white; padding: 15px; 
+                display: flex; justify-content: space-between; align-items: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; z-index: 1000;
+            }
+            #map { height: calc(100vh - 70px); width: 100vw; }
+            .stats { font-weight: bold; font-size: 0.9em; }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div><b>Chauffeur:</b> Livreur Salah</div>
+            <div class="stats">
+                📦 23 colis | 
+                📍 53.09 km | 
+                💰 Gain: 114.76 DT
+            </div>
+        </div>
+        <div id="map"></div>
+
+        <script>
+            var map = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            var stops = [
+                { "lat": 36.806, "lng": 10.181, "info": "DÉPÔT (Départ)", "color": "blue" },
+                { "lat": 36.7977845733307, "lng": 10.208029773399304, "info": "Arrêt 1: Boutique_A<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.78, "lng": 10.19, "info": "Arrêt 2: Boutique_B<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.75, "lng": 10.21, "info": "Arrêt 3: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.75, "lng": 10.22, "info": "Arrêt 4: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.7509827803322, "lng": 10.223136940868464, "info": "Arrêt 5: Boutique_B<br>Zone Kram", "color": "green" }, { "lat": 36.76, "lng": 10.22, "info": "Arrêt 6: Boutique_B<br>Zone ezzahra", "color": "green" }, { "lat": 36.77, "lng": 10.23, "info": "Arrêt 7: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.7678233987053, "lng": 10.272401372268078, "info": "Arrêt 8: Boutique_A<br>Zone ezzahra", "color": "green" }, { "lat": 36.78457856578412, "lng": 10.246878031113509, "info": "Arrêt 9: Boutique_B<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.84, "lng": 10.25, "info": "Arrêt 10: Boutique_A<br>Zone Kram", "color": "green" }, { "lat": 36.84952823967741, "lng": 10.285556560332497, "info": "Arrêt 11: Boutique_A<br>Zone zahrouni", "color": "green" }, { "lat": 36.86, "lng": 10.26, "info": "Arrêt 12: Boutique_A<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.87, "lng": 10.27, "info": "Arrêt 13: Boutique_B<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.87, "lng": 10.27, "info": "Arrêt 14: Boutique_C<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.88, "lng": 10.28, "info": "Arrêt 15: Boutique_C<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.89, "lng": 10.24, "info": "Arrêt 16: Boutique_C<br>Zone Kram", "color": "green" }, { "lat": 36.9, "lng": 10.23, "info": "Arrêt 17: Boutique_B<br>Zone Kram", "color": "green" }, { "lat": 36.88, "lng": 10.21, "info": "Arrêt 18: Boutique_B<br>Zone Kram", "color": "green" }, { "lat": 36.85732824011935, "lng": 10.226979131886898, "info": "Arrêt 19: Boutique_C<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.85043550101976, "lng": 10.225889620496034, "info": "Arrêt 20: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.8341704, "lng": 10.194323, "info": "Arrêt 21: Boutique_A<br>16 rue 8205 hay khadra", "color": "green" }, { "lat": 36.83, "lng": 10.2, "info": "Arrêt 22: Boutique_A<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.82, "lng": 10.19, "info": "Arrêt 23: Boutique_C<br>Zone carrefour el marsa", "color": "green" }
+            ];
+
+            var bounds = [];
+
+            // Ajouter les marqueurs
+            stops.forEach(function(s, index) {
+                var marker = L.marker([s.lat, s.lng]).addTo(map);
+                marker.bindPopup(s.info);
+                bounds.push([s.lat, s.lng]);
+            });
+
+            // Tracer la route via OSRM
+            var osrmUrl = "https://router.project-osrm.org/route/v1/driving/10.181,36.806;10.208029773399304,36.7977845733307;10.19,36.78;10.21,36.75;10.22,36.75;10.223136940868464,36.7509827803322;10.22,36.76;10.23,36.77;10.272401372268078,36.7678233987053;10.246878031113509,36.78457856578412;10.25,36.84;10.285556560332497,36.84952823967741;10.26,36.86;10.27,36.87;10.27,36.87;10.28,36.88;10.24,36.89;10.23,36.9;10.21,36.88;10.226979131886898,36.85732824011935;10.225889620496034,36.85043550101976;10.194323,36.8341704;10.2,36.83;10.19,36.82?overview=full&geometries=geojson";
+            
+            fetch(osrmUrl)
+                .then(response => response.json())
+                .then(data => {
+                    var route = data.routes[0].geometry;
+                    L.geoJSON(route, {
+                        style: { color: '#2d6a4f', weight: 6, opacity: 0.7 }
+                    }).addTo(map);
+                    
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                });
+        </script>
+    </body>
+    </html>
+    

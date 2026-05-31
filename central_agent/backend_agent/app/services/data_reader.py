@@ -25,12 +25,11 @@ def get_orders_from_csv():
     
     df = pd.read_csv(full_path, sep=None, engine='python', encoding='utf-8-sig')
     
+    # Fix column names to match CSV structure
     mapping = {
-        'Expéditeur': 'customer_name',
+        'Reference': 'id',
         'lon': 'lng',
-        'Prix Total': 'delivery_value',
-        'Poids': 'weight',
-        'Reference': 'id'
+        'Prix_Total': 'delivery_value'
     }
     df = df.rename(columns=mapping)
     

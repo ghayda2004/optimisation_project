@@ -1,0 +1,69 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Route Chauffeur Livreur Karim</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { margin: 0; padding: 0; font-family: sans-serif; }
+            #header { 
+                background: #2d6a4f; color: white; padding: 15px; 
+                display: flex; justify-content: space-between; align-items: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: relative; z-index: 1000;
+            }
+            #map { height: calc(100vh - 70px); width: 100vw; }
+            .stats { font-weight: bold; font-size: 0.9em; }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div><b>Chauffeur:</b> Livreur Karim</div>
+            <div class="stats">
+                📦 30 colis | 
+                📍 143.34 km | 
+                💰 Gain: 111.9 DT
+            </div>
+        </div>
+        <div id="map"></div>
+
+        <script>
+            var map = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            var stops = [
+                { "lat": 36.806, "lng": 10.181, "info": "DÉPÔT (Départ)", "color": "blue" },
+                { "lat": 36.81, "lng": 10.18, "info": "Arrêt 1: Boutique_A<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.8200212, "lng": 10.1809495, "info": "Arrêt 2: Boutique_C<br>Jeanne d'arc", "color": "green" }, { "lat": 36.8353876, "lng": 10.1667221, "info": "Arrêt 3: Boutique_A<br>jardins d'el menzah 1", "color": "green" }, { "lat": 36.84, "lng": 10.17, "info": "Arrêt 4: Boutique_B<br>Zone jardins d'el menzah 1", "color": "green" }, { "lat": 36.84, "lng": 10.16, "info": "Arrêt 5: Boutique_C<br>Zone jardins d'el menzah 1", "color": "green" }, { "lat": 36.85, "lng": 10.15, "info": "Arrêt 6: Boutique_A<br>Zone jardins d'el menzah 1", "color": "green" }, { "lat": 36.88479198756381, "lng": 10.149848247932702, "info": "Arrêt 7: Boutique_C<br>Zone ezzahra", "color": "green" }, { "lat": 36.89193768186935, "lng": 10.123792857555395, "info": "Arrêt 8: Boutique_B<br>Zone zahrouni", "color": "green" }, { "lat": 36.870615751499685, "lng": 10.07756394625929, "info": "Arrêt 9: Boutique_B<br>Zone carrefour el marsa", "color": "green" }, { "lat": 36.877417985245344, "lng": 10.037868816641742, "info": "Arrêt 10: Boutique_B<br>Zone 16 rue 8205 hay khadra", "color": "green" }, { "lat": 36.89410834031765, "lng": 10.04898703673507, "info": "Arrêt 11: Boutique_A<br>Zone Kram", "color": "green" }, { "lat": 36.95659934226164, "lng": 10.13001797876793, "info": "Arrêt 12: Boutique_B<br>Zone zahrouni", "color": "green" }, { "lat": 36.94228905486141, "lng": 10.064010643898524, "info": "Arrêt 13: Boutique_B<br>Zone Kram", "color": "green" }, { "lat": 36.94585933185392, "lng": 9.964241407057964, "info": "Arrêt 14: Boutique_B<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.92335449965161, "lng": 9.950060013956724, "info": "Arrêt 15: Boutique_B<br>Zone jardins d'el menzah 1", "color": "green" }, { "lat": 36.813761188766, "lng": 9.978313558581684, "info": "Arrêt 16: Boutique_C<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.73656237701236, "lng": 9.956668593380902, "info": "Arrêt 17: Boutique_C<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.69753604462167, "lng": 9.913063774158225, "info": "Arrêt 18: Boutique_A<br>Zone Sidi bousaid", "color": "green" }, { "lat": 36.55258063938274, "lng": 9.863736239410798, "info": "Arrêt 19: Boutique_B<br>Zone rue ichbilia", "color": "green" }, { "lat": 36.55727655737609, "lng": 9.880462068409244, "info": "Arrêt 20: Boutique_B<br>Zone zahrouni", "color": "green" }, { "lat": 36.63590047370475, "lng": 9.91879508384335, "info": "Arrêt 21: Boutique_A<br>Zone jardins d'el menzah 1", "color": "green" }, { "lat": 36.64627225776566, "lng": 9.94667091579683, "info": "Arrêt 22: Boutique_A<br>Zone zahrouni", "color": "green" }, { "lat": 36.78, "lng": 10.08, "info": "Arrêt 23: Boutique_A<br>Zone zahrouni", "color": "green" }, { "lat": 36.79, "lng": 10.09, "info": "Arrêt 24: Boutique_B<br>Zone zahrouni", "color": "green" }, { "lat": 36.7922783, "lng": 10.1078508, "info": "Arrêt 25: Boutique_B<br>zahrouni", "color": "green" }, { "lat": 36.8, "lng": 10.1, "info": "Arrêt 26: Boutique_A<br>Zone zahrouni", "color": "green" }, { "lat": 36.81730676242966, "lng": 10.119789596992511, "info": "Arrêt 27: Boutique_A<br>Zone lycée abou kacem chebbi", "color": "green" }, { "lat": 36.82, "lng": 10.14, "info": "Arrêt 28: Boutique_C<br>Zone manar1", "color": "green" }, { "lat": 36.8372507, "lng": 10.1402003, "info": "Arrêt 29: Boutique_C<br>manar1", "color": "green" }, { "lat": 36.83, "lng": 10.16, "info": "Arrêt 30: Boutique_B<br>Zone jardins d'el menzah 1", "color": "green" }
+            ];
+
+            var bounds = [];
+
+            // Ajouter les marqueurs
+            stops.forEach(function(s, index) {
+                var marker = L.marker([s.lat, s.lng]).addTo(map);
+                marker.bindPopup(s.info);
+                bounds.push([s.lat, s.lng]);
+            });
+
+            // Tracer la route via OSRM
+            var osrmUrl = "https://router.project-osrm.org/route/v1/driving/10.181,36.806;10.18,36.81;10.1809495,36.8200212;10.1667221,36.8353876;10.17,36.84;10.16,36.84;10.15,36.85;10.149848247932702,36.88479198756381;10.123792857555395,36.89193768186935;10.07756394625929,36.870615751499685;10.037868816641742,36.877417985245344;10.04898703673507,36.89410834031765;10.13001797876793,36.95659934226164;10.064010643898524,36.94228905486141;9.964241407057964,36.94585933185392;9.950060013956724,36.92335449965161;9.978313558581684,36.813761188766;9.956668593380902,36.73656237701236;9.913063774158225,36.69753604462167;9.863736239410798,36.55258063938274;9.880462068409244,36.55727655737609;9.91879508384335,36.63590047370475;9.94667091579683,36.64627225776566;10.08,36.78;10.09,36.79;10.1078508,36.7922783;10.1,36.8;10.119789596992511,36.81730676242966;10.14,36.82;10.1402003,36.8372507;10.16,36.83?overview=full&geometries=geojson";
+            
+            fetch(osrmUrl)
+                .then(response => response.json())
+                .then(data => {
+                    var route = data.routes[0].geometry;
+                    L.geoJSON(route, {
+                        style: { color: '#2d6a4f', weight: 6, opacity: 0.7 }
+                    }).addTo(map);
+                    
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                });
+        </script>
+    </body>
+    </html>
+    
